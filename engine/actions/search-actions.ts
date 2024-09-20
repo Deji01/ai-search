@@ -21,6 +21,8 @@ export async function fetchExaResults(query: string): Promise<SearchResult[]> {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
+            "Origin": window.location.origin,
+            // "Origin": process.env.NODE_ENV === 'production' ? window.location.origin : 'http://localhost:3000',
             "Authorization": `Bearer ${EXA_API_KEY}`
         },
         body: JSON.stringify({ query })
