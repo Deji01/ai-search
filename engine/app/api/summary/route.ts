@@ -11,6 +11,14 @@ export async function POST(req: Request) {
     try {
         const { query } = await req.json();
 
+        // Validate the query input
+        if (!query || query.trim() === "") {
+            return NextResponse.json(
+                { error: "Query cannot be empty" },
+                { status: 400 }
+            );
+        }
+
         const results = await fetchExaResults(query); // Function that calls Exa API to get results
 
         const completionStream = await together.chat.completions.create({
