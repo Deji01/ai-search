@@ -1,55 +1,69 @@
-"use client"
+"use client";
 
-import { useState, useRef } from "react"
-import { Search, Brain } from "lucide-react"
-import { motion } from "framer-motion"
-import { fetchExaResults, generateStreamingSummary } from "@/actions/search-actions"
-import { SearchResult } from "@/types/search"
+import { useState, useRef } from "react";
+import { Search, Brain } from "lucide-react";
+import { motion } from "framer-motion";
+import { SearchResult } from "@/types/search";
 
 export default function AISearchLandingPage() {
-  const [query, setQuery] = useState("")
-  const [isSearching, setIsSearching] = useState(false)
-  const [isSummarizing, setIsSummarizing] = useState(false)
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
-  const [summary, setSummary] = useState("")
-  const [error, setError] = useState("")
-  const scrollRef = useRef(null)
+  const [query, setQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [summary, setSummary] = useState("");
+  const [error, setError] = useState("");
+  const scrollRef = useRef(null);
 
   const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (query.trim()) {
-      setIsSearching(true)
-      setSearchResults([])
-      setSummary("")
-      setError("")
+      setIsSearching(true);
+      setSearchResults([]);
+      setSummary("");
+      setError("");
 
+      // Start Exa API request
       try {
-        const results = await fetchExaResults(query)
-        setSearchResults(results)
-        setIsSearching(false)
-        setIsSummarizing(true)
+        // Call the Exa API route
+        const response = await fetch("/api/exa", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ query }),
+        });
 
-        const response = await generateStreamingSummary(results)
-        const reader = response.body?.getReader()
-        const decoder = new TextDecoder()
+        if (!response.ok) throw new Error("Failed to fetch Exa results");
 
-        if (reader) {
-          while (true) {
-            const { done, value } = await reader.read()
-            if (done) break
-            const chunk = decoder.decode(value)
-            setSummary(prev => prev + chunk)
-          }
-        }
+        const results = await response.json();
+        setSearchResults(results); // Display Exa results as they arrive
+        setIsSearching(false);     // Stop showing loading spinner for Exa
+
+        // Start generating summary asynchronously after Exa results are displayed
+        setIsSummarizing(true); // Show summary loading spinner
+
+        const summaryResponse = await fetch("/api/summary", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ query }),
+        });
+
+        if (!summaryResponse.ok) throw new Error("Failed to generate summary");
+
+        const { summary } = await summaryResponse.json();
+        setSummary(summary);
       } catch (error) {
-        console.error("Search failed:", error)
-        setError("Failed to fetch search results. Please try again.")
+        console.error("Search failed:", error);
+        setError("Failed to fetch search results. Please try again.");
       } finally {
-        setIsSearching(false)
-        setIsSummarizing(false)
+        setIsSearching(false);
+        setIsSummarizing(false);
       }
     }
-  }
+  };
+
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-blue-50 to-indigo-100 text-gray-800 font-sans">
       <form onSubmit={handleSearch} className="w-full max-w-lg">
@@ -67,15 +81,12 @@ export default function AISearchLandingPage() {
         </div>
       </form>
 
+      {/* Show a loading spinner while searching for Exa results */}
       {isSearching && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="loading-spinner"
-        ></motion.div>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="loading-spinner"></motion.div>
       )}
 
+      {/* Show Exa results as soon as they are ready */}
       {searchResults.length > 0 && (
         <div className="results-container">
           {searchResults.map((result, index) => (
@@ -87,6 +98,7 @@ export default function AISearchLandingPage() {
         </div>
       )}
 
+      {/* Show summary generation spinner while waiting for summary */}
       {isSummarizing && (
         <div className="summary-container">
           <Brain className="summary-icon animate-pulse" />
@@ -94,6 +106,7 @@ export default function AISearchLandingPage() {
         </div>
       )}
 
+      {/* Show summary when it is ready */}
       {summary && (
         <div className="summary-box">
           <Brain className="summary-icon" />
@@ -102,11 +115,12 @@ export default function AISearchLandingPage() {
         </div>
       )}
 
+      {/* Show error message if any */}
       {error && (
         <div className="error-box">
           <strong>Error: </strong> {error}
         </div>
       )}
     </div>
-  )
+  );
 }

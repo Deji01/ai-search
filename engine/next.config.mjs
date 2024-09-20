@@ -5,6 +5,7 @@ const nextConfig = {
         serverActions: {
             allowedOrigins: [
                 "reimagined-waddle-w4pxrpv699vfgwj-3000.app.github.dev",
+                "http://localhost:3000",
             ],
         }
     },
