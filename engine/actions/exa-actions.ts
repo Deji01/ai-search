@@ -14,8 +14,15 @@ export async function fetchExaResults(query: string) {
       numResults: 10,
       text: true,
     });
-    console.log("Search results:", JSON.stringify(result, null, 2));
-    return result;
+
+    // Sort the results by score in descending order and select the top 5
+    const topResults = result.results
+      .filter((result) => result.score !== undefined) // Filter out items where score is undefined
+      .sort((a, b) => (b.score! - a.score!)) // Use non-null assertion '!' after filtering
+      .slice(0, 5); // Select the top 5
+
+    console.log("Search results:", JSON.stringify(topResults, null, 2));
+    return topResults;
   } catch (error) {
     console.error("Error performing search:", error);
     throw new Error("Failed to perform search");

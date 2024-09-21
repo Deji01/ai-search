@@ -23,3 +23,6 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
 }
 
+export const config = {
+    matcher: '/api/:path*',  // Only apply to API routes, or remove this to apply to all routes
+  };
