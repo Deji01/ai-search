@@ -8,14 +8,14 @@ import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
-interface HistoryItem {
+interface ChatHistoryItem {
     id: string;
-    query: string;
+    title: string;
     timestamp: string;
 }
 
-export function SearchHistory({ period }: { period: string }) {
-    const [history, setHistory] = useState<HistoryItem[]>([]);
+export function ChatHistory({ period }: { period: string }) {
+    const [history, setHistory] = useState<ChatHistoryItem[]>([]);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
     const supabase = createClientComponentClient();
@@ -29,11 +29,11 @@ export function SearchHistory({ period }: { period: string }) {
                     return;
                 }
 
-                const response = await fetch(`/api/history/search?period=${period}`);
+                const response = await fetch(`/api/history/chat?period=${period}`);
                 const data = await response.json();
                 setHistory(data.history);
             } catch (error) {
-                console.error('Error fetching search history:', error);
+                console.error('Error fetching chat history:', error);
             } finally {
                 setLoading(false);
             }
@@ -53,7 +53,7 @@ export function SearchHistory({ period }: { period: string }) {
     if (history.length === 0) {
         return (
             <div className="text-center py-8">
-                <p>No search history found for this period.</p>
+                <p>No chat history found for this period.</p>
             </div>
         );
     }
@@ -63,16 +63,13 @@ export function SearchHistory({ period }: { period: string }) {
             {history.map((item) => (
                 <Card key={item.id} className="mb-4">
                     <CardHeader>
-                        <CardTitle>{item.query}</CardTitle>
+                        <CardTitle>{item.title}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <p className="text-sm text-gray-500">{new Date(item.timestamp).toLocaleString()}</p>
                         <div className="mt-2">
-                            <Link href={`/search?q=${encodeURIComponent(item.query)}`}>
-                                <Button variant="outline" size="sm">View Results</Button>
-                            </Link>
-                            <Link href={`/chat?q=${encodeURIComponent(item.query)}`}>
-                                <Button variant="outline" size="sm" className="ml-2">Start Chat</Button>
+                            <Link href={`/chat/${item.id}`}>
+                                <Button variant="outline" size="sm">Continue Chat</Button>
                             </Link>
                         </div>
                     </CardContent>
